@@ -54,7 +54,7 @@ bun start
 
 ## Commands
 
-All commands are admin-only, which is set in .env!
+All commands are admin-only, which are set in .env!
 
 - `/hi-ban <hash> [reason]` - Ban a user by their hash
 - `/hi-unban <hash>` - Remove a ban
