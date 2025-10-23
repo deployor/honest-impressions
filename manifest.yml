@@ -12,14 +12,6 @@ features:
       callback_id: reply_impression
       description: Share your honest thoughts anonymously
   slash_commands:
-    - command: /hi-ban
-      description: Ban a user by hash (admin only)
-      usage_hint: <hash> [reason]
-      url: https://beans.deployor.dev/slack/events
-    - command: /hi-unban
-      description: Unban a user by hash (admin only)
-      usage_hint: <hash>
-      url: https://beans.deployor.dev/slack/events
     - command: /hi-list-bans
       description: List all banned users (admin only)
       url: https://beans.deployor.dev/slack/events
@@ -30,6 +22,7 @@ oauth_config:
       - chat:write.public
       - commands
       - users:read
+      - team:read
       - channels:history
       - groups:history
       - im:history

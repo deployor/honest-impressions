@@ -12,31 +12,39 @@ Anonymous Slack replies with moderation.
 
 Users can reply anonymously to threads. All replies go to a review channel first where admins approve or deny them before they're posted.
 
-### Pending Review
+### Review Workflow
 
-When someone submits an honest anonymous impression, it appears in the review channel:
+When someone submits an honest impression, it appears in the review channel as pending:
 
-![Pending Review](https://i.postimg.cc/Jn9CTWjF/Clean-Shot-2025-10-22-at-00-18-35.png)
+![Pending Review](https://i.postimg.cc/pVSxgGtF/Pending.jpg)
 
-Moderators can approve or deny the message. They can also ban users by their hash.
+Admins can approve the message:
 
-### Ban a User
+![Approved Message](https://i.postimg.cc/440ZrLTY/Approved.jpg)
 
-Ban a user:
+Or deny it:
 
-![User Banned](https://i.postimg.cc/4NfBrSw7/Clean-Shot-2025-10-22-at-00-14-25.png)
+![Denied Message](https://i.postimg.cc/NGnYWJw9/Denied.jpg)
+
+### Ban Management
+
+Click "Ban User" on any review message to ban someone. The system assigns a random Case ID for privacy, this case is also shown to the user when they try to submit again:
+
+![Ban Review](https://i.postimg.cc/pVSxgGtn/Ban-Review.jpg)
+
+To make sure everyone notices a ban, the bot posts a message user with the Case ID:
+
+![Ban Message](https://i.postimg.cc/DfNFtjK4/Ban-Message.jpg)
 
 ### Unban a User
 
-Remove a ban to allow the user to submit replies again:
-
-![User Unbanned](https://i.postimg.cc/V6tVk0bX/Clean-Shot-2025-10-22-at-00-15-08.png)
+Navigate to the review message (linked in ban notifications) and click "Unban User" to unban them.
 
 ### List All Bans
 
-View all currently banned hashes with their reasons:
+View all currently banned users with `/hi-list-bans`:
 
-![Ban List](https://i.postimg.cc/2ypgQ7fJ/Clean-Shot-2025-10-22-at-00-15-49.png)
+![Ban List](https://i.postimg.cc/0Qm3FfGR/Clean-Shot-2025-10-23-at-11-06-35.png)
 
 ## Setup
 
@@ -54,11 +62,9 @@ bun start
 
 ## Commands
 
-All commands are admin-only, which are set in .env!
+All things are admin only (configured via `ADMIN_USER_IDS` in `.env`):
 
-- `/hi-ban <hash> [reason]` - Ban a user by their hash
-- `/hi-unban <hash>` - Remove a ban
-- `/hi-list-bans` - Show all banned hashes
+- `/hi-list-bans` - Show all banned users with their Case IDs
 
 ---
 

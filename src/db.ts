@@ -9,6 +9,7 @@ export const db = drizzle(client);
 export const bannedUsers = pgTable("banned_users", {
 	id: serial("id").primaryKey(),
 	userHash: varchar("user_hash", { length: 128 }).notNull().unique(),
+	caseId: varchar("case_id", { length: 16 }).notNull().unique(),
 	bannedAt: timestamp("banned_at").defaultNow().notNull(),
 	bannedBy: varchar("banned_by", { length: 64 }),
 	reason: text("reason"),
@@ -28,6 +29,30 @@ export const messages = pgTable("messages", {
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+async function generateCaseId(): Promise<string> {
+	let digits = 4;
+	const maxAttempts = 100;
+	
+	while (digits <= 8) {
+		for (let i = 0; i < maxAttempts; i++) {
+			const min = 10 ** (digits - 1);
+			const max = 10 ** digits - 1;
+			const caseId = Math.floor(Math.random() * (max - min + 1) + min).toString();
+			
+			const [existing] = await db
+				.select()
+				.from(bannedUsers)
+				.where(eq(bannedUsers.caseId, caseId))
+				.limit(1);
+			
+			if (!existing) return caseId;
+		}
+		digits++;
+	}
+	
+	throw new Error("Unable to generate unique case ID");
+}
+
 export async function getBanInfo(hash: string) {
 	const [result] = await db
 		.select()
@@ -37,8 +62,24 @@ export async function getBanInfo(hash: string) {
 	return result || null;
 }
 
+export async function getBanByCaseId(caseId: string) {
+	const [result] = await db
+		.select()
+		.from(bannedUsers)
+		.where(eq(bannedUsers.caseId, caseId))
+		.limit(1);
+	return result || null;
+}
+
 export async function ban(hash: string, by: string, reason?: string) {
-	await db.insert(bannedUsers).values({ userHash: hash, bannedBy: by, reason });
+	const caseId = await generateCaseId();
+	await db.insert(bannedUsers).values({
+		userHash: hash,
+		caseId,
+		bannedBy: by,
+		reason
+	});
+	return caseId;
 }
 
 export async function unban(hash: string) {
@@ -47,6 +88,14 @@ export async function unban(hash: string) {
 		.where(eq(bannedUsers.userHash, hash))
 		.returning();
 	return result.length > 0;
+}
+
+export async function unbanByCaseId(caseId: string) {
+	const result = await db
+		.delete(bannedUsers)
+		.where(eq(bannedUsers.caseId, caseId))
+		.returning();
+	return result.length > 0 ? result[0] : null;
 }
 
 export async function listBans() {
@@ -58,7 +107,6 @@ export async function createMessage(data: {
 	text: string;
 	channelId: string;
 	threadTs: string;
-	reviewTs?: string;
 }) {
 	const [msg] = await db
 		.insert(messages)
@@ -76,11 +124,7 @@ export async function getMessage(id: number) {
 	return msg;
 }
 
-export async function approveMessage(
-	id: number,
-	by: string,
-	postedTs?: string,
-) {
+export async function approveMessage(id: number, by: string, postedTs?: string) {
 	await db
 		.update(messages)
 		.set({
