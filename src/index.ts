@@ -436,6 +436,8 @@ app.view("ban_modal", async ({ ack, body, view, client }) => {
 					},
 				},
 			],
+			unfurl_links: false,
+			unfurl_media: false,
 		});
 
 		if (messageTs && channelId && storedMessageId) {
@@ -530,6 +532,8 @@ app.view("ban_modal", async ({ ack, body, view, client }) => {
 						},
 					},
 				],
+				unfurl_links: false,
+				unfurl_media: false,
 			});
 		} else {
 			console.error("Ban error:", error);
