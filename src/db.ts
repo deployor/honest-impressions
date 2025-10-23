@@ -32,24 +32,26 @@ export const messages = pgTable("messages", {
 async function generateCaseId(): Promise<string> {
 	let digits = 4;
 	const maxAttempts = 100;
-	
+
 	while (digits <= 8) {
 		for (let i = 0; i < maxAttempts; i++) {
 			const min = 10 ** (digits - 1);
 			const max = 10 ** digits - 1;
-			const caseId = Math.floor(Math.random() * (max - min + 1) + min).toString();
-			
+			const caseId = Math.floor(
+				Math.random() * (max - min + 1) + min,
+			).toString();
+
 			const [existing] = await db
 				.select()
 				.from(bannedUsers)
 				.where(eq(bannedUsers.caseId, caseId))
 				.limit(1);
-			
+
 			if (!existing) return caseId;
 		}
 		digits++;
 	}
-	
+
 	throw new Error("Unable to generate unique case ID");
 }
 
@@ -77,7 +79,7 @@ export async function ban(hash: string, by: string, reason?: string) {
 		userHash: hash,
 		caseId,
 		bannedBy: by,
-		reason
+		reason,
 	});
 	return caseId;
 }
@@ -124,7 +126,11 @@ export async function getMessage(id: number) {
 	return msg;
 }
 
-export async function approveMessage(id: number, by: string, postedTs?: string) {
+export async function approveMessage(
+	id: number,
+	by: string,
+	postedTs?: string,
+) {
 	await db
 		.update(messages)
 		.set({

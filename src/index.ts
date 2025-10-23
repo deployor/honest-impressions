@@ -14,7 +14,11 @@ const SALT = process.env.HASH_SALT!;
 const hashUser = (userId: string): string =>
 	pbkdf2Sync(userId, SALT, 100000, 32, "sha256").toString("hex");
 
-const buildThreadLink = async (client: any, channelId: string, threadTs: string) => {
+const buildThreadLink = async (
+	client: any,
+	channelId: string,
+	threadTs: string,
+) => {
 	const team = await client.team.info();
 	const domain = team.team?.domain || "slack";
 	return `https://${domain}.slack.com/archives/${channelId}/p${threadTs.replace(".", "")}`;
@@ -22,34 +26,45 @@ const buildThreadLink = async (client: any, channelId: string, threadTs: string)
 
 const extractThreadLink = (blocks: any[] | undefined): string => {
 	if (!blocks) return "#";
-	const contextBlock = blocks.find((b: any) =>
-		b.type === "context" && b.elements?.[0]?.text?.includes("View thread")
+	const contextBlock = blocks.find(
+		(b: any) =>
+			b.type === "context" && b.elements?.[0]?.text?.includes("View thread"),
 	);
 	if (contextBlock?.elements?.[0]?.text) {
-		const match = String(contextBlock.elements[0].text).match(/https:\/\/[^\|>]+/);
+		const match = String(contextBlock.elements[0].text).match(
+			/https:\/\/[^\|>]+/,
+		);
 		if (match) return match[0];
 	}
 	return "#";
 };
 
-const buildReviewBlocks = (text: string, threadLink: string, banInfo: any = null) => {
+const buildReviewBlocks = (
+	text: string,
+	threadLink: string,
+	banInfo: any = null,
+) => {
 	const blocks: any[] = [
 		{
 			type: "context",
-			elements: [{
-				type: "mrkdwn",
-				text: `:ms-thinking: *PENDING* · <${threadLink}|View thread>`,
-			}],
+			elements: [
+				{
+					type: "mrkdwn",
+					text: `:ms-thinking: *PENDING* · <${threadLink}|View thread>`,
+				},
+			],
 		},
 	];
 
 	if (banInfo) {
 		blocks.push({
 			type: "context",
-			elements: [{
-				type: "mrkdwn",
-				text: `:ms-war-hammer: User banned (Case #${banInfo.caseId}) by <@${banInfo.bannedBy}> - ${banInfo.reason}`,
-			}],
+			elements: [
+				{
+					type: "mrkdwn",
+					text: `:ms-war-hammer: User banned (Case #${banInfo.caseId}) by <@${banInfo.bannedBy}> - ${banInfo.reason}`,
+				},
+			],
 		});
 	}
 
@@ -62,13 +77,19 @@ const buildReviewBlocks = (text: string, threadLink: string, banInfo: any = null
 				text: `>${text.split("\n").join("\n>")}`,
 			},
 		},
-		{ type: "divider" }
+		{ type: "divider" },
 	);
 
 	return blocks;
 };
 
-const updateReviewMessage = (status: string, reviewer: string, threadLink: string, text: string, banInfo: any = null) => {
+const updateReviewMessage = (
+	status: string,
+	reviewer: string,
+	threadLink: string,
+	text: string,
+	banInfo: any = null,
+) => {
 	const statusEmojis: Record<string, string> = {
 		approved: ":ms-green-tick: *APPROVED*",
 		denied: ":ms-no: *DENIED*",
@@ -77,20 +98,24 @@ const updateReviewMessage = (status: string, reviewer: string, threadLink: strin
 	const blocks: any[] = [
 		{
 			type: "context",
-			elements: [{
-				type: "mrkdwn",
-				text: `${statusEmojis[status]} by <@${reviewer}> · <${threadLink}|View thread>`,
-			}],
+			elements: [
+				{
+					type: "mrkdwn",
+					text: `${statusEmojis[status]} by <@${reviewer}> · <${threadLink}|View thread>`,
+				},
+			],
 		},
 	];
 
 	if (banInfo) {
 		blocks.push({
 			type: "context",
-			elements: [{
-				type: "mrkdwn",
-				text: `:ms-war-hammer: User banned (Case #${banInfo.caseId}) by <@${banInfo.bannedBy}> - ${banInfo.reason}`,
-			}],
+			elements: [
+				{
+					type: "mrkdwn",
+					text: `:ms-war-hammer: User banned (Case #${banInfo.caseId}) by <@${banInfo.bannedBy}> - ${banInfo.reason}`,
+				},
+			],
 		});
 	}
 
@@ -103,7 +128,7 @@ const updateReviewMessage = (status: string, reviewer: string, threadLink: strin
 				text: `>${text.split("\n").join("\n>")}`,
 			},
 		},
-		{ type: "divider" }
+		{ type: "divider" },
 	);
 
 	return blocks;
@@ -138,7 +163,11 @@ app.shortcut("reply_impression", async ({ ack, body, client }) => {
 		view: {
 			type: "modal",
 			callback_id: "reply_modal",
-			title: { type: "plain_text", text: ":ms-thinking: Honest Impressions", emoji: true },
+			title: {
+				type: "plain_text",
+				text: ":ms-thinking: Honest Impressions",
+				emoji: true,
+			},
 			blocks: [
 				{
 					type: "input",
@@ -243,7 +272,13 @@ app.action("approve", async ({ ack, body, client }) => {
 
 	const banInfo = await db.getBanInfo(msg.userHash);
 	const threadLink = await buildThreadLink(client, msg.channelId, msg.threadTs);
-	const blocks = updateReviewMessage("approved", body.user.id, threadLink, msg.text, banInfo);
+	const blocks = updateReviewMessage(
+		"approved",
+		body.user.id,
+		threadLink,
+		msg.text,
+		banInfo,
+	);
 
 	await client.chat.update({
 		channel: action.channel.id,
@@ -275,7 +310,13 @@ app.action("deny", async ({ ack, body, client }) => {
 
 	const banInfo = await db.getBanInfo(msg.userHash);
 	const threadLink = await buildThreadLink(client, msg.channelId, msg.threadTs);
-	const blocks = updateReviewMessage("denied", body.user.id, threadLink, msg.text, banInfo);
+	const blocks = updateReviewMessage(
+		"denied",
+		body.user.id,
+		threadLink,
+		msg.text,
+		banInfo,
+	);
 
 	await client.chat.update({
 		channel: action.channel.id,
@@ -290,7 +331,7 @@ app.action("ban_user", async ({ ack, body, client }) => {
 	const action = body as any;
 	const msgId = Number.parseInt(action.actions[0].value);
 	const msg = await db.getMessage(msgId);
-	
+
 	if (!msg) {
 		await client.chat.postEphemeral({
 			channel: action.channel.id,
@@ -299,7 +340,7 @@ app.action("ban_user", async ({ ack, body, client }) => {
 		});
 		return;
 	}
-	
+
 	const userHash = msg.userHash;
 
 	if (!ADMINS.includes(body.user.id)) {
@@ -321,7 +362,11 @@ app.action("ban_user", async ({ ack, body, client }) => {
 		view: {
 			type: "modal",
 			callback_id: "ban_modal",
-			title: { type: "plain_text", text: ":ms-war-hammer: Ban User", emoji: true },
+			title: {
+				type: "plain_text",
+				text: ":ms-war-hammer: Ban User",
+				emoji: true,
+			},
 			blocks: [
 				{
 					type: "section",
@@ -365,8 +410,8 @@ app.view("ban_modal", async ({ ack, body, view, client }) => {
 				inclusive: true,
 			});
 			const msg = history.messages?.[0];
-			return msg?.blocks?.find((b: any) =>
-				b.type === "actions" && b.elements?.[0]?.value
+			return msg?.blocks?.find(
+				(b: any) => b.type === "actions" && b.elements?.[0]?.value,
 			)?.elements?.[0]?.value;
 		} catch (err) {
 			console.error("Failed to fetch message for ID:", err);
@@ -411,22 +456,28 @@ app.view("ban_modal", async ({ ack, body, view, client }) => {
 				const msg = history.messages?.[0];
 				if (msg) {
 					const threadLink = extractThreadLink(msg.blocks);
-					const contentBlock = msg.blocks?.find((b: any) => b.type === "section" && b.text);
+					const contentBlock = msg.blocks?.find(
+						(b: any) => b.type === "section" && b.text,
+					);
 
 					const updatedBlocks: any[] = [
 						{
 							type: "context",
-							elements: [{
-								type: "mrkdwn",
-								text: `:ms-no: *DENIED* (user banned) by <@${body.user.id}> · <${threadLink}|View thread>`,
-							}],
+							elements: [
+								{
+									type: "mrkdwn",
+									text: `:ms-no: *DENIED* (user banned) by <@${body.user.id}> · <${threadLink}|View thread>`,
+								},
+							],
 						},
 						{
 							type: "context",
-							elements: [{
-								type: "mrkdwn",
-								text: `:ms-war-hammer: User banned (Case #${caseId}) by <@${body.user.id}> - ${reason}`,
-							}],
+							elements: [
+								{
+									type: "mrkdwn",
+									text: `:ms-war-hammer: User banned (Case #${caseId}) by <@${body.user.id}> - ${reason}`,
+								},
+							],
 						},
 						{ type: "divider" },
 					];
@@ -436,13 +487,15 @@ app.view("ban_modal", async ({ ack, body, view, client }) => {
 						{ type: "divider" },
 						{
 							type: "actions",
-							elements: [{
-								type: "button",
-								text: { type: "plain_text", text: "Unban User" },
-								action_id: "unban_user_from_review",
-								value: `${caseId}|${storedMessageId}|${messageTs}|${channelId}`,
-							}],
-						}
+							elements: [
+								{
+									type: "button",
+									text: { type: "plain_text", text: "Unban User" },
+									action_id: "unban_user_from_review",
+									value: `${caseId}|${storedMessageId}|${messageTs}|${channelId}`,
+								},
+							],
+						},
 					);
 
 					await client.chat.update({
@@ -457,7 +510,10 @@ app.view("ban_modal", async ({ ack, body, view, client }) => {
 			}
 		}
 	} catch (error: any) {
-		if (error?.code === "23505" || error?.constraint_name === "banned_users_user_hash_unique") {
+		if (
+			error?.code === "23505" ||
+			error?.constraint_name === "banned_users_user_hash_unique"
+		) {
 			await db.unban(userHash);
 			const newCaseId = await db.ban(userHash, body.user.id, reason);
 			const reviewLink = await buildThreadLink(client, channelId, messageTs);
@@ -465,26 +521,30 @@ app.view("ban_modal", async ({ ack, body, view, client }) => {
 			await client.chat.postMessage({
 				channel: REVIEW_CHANNEL,
 				text: `:ms-mild-panic: User re-banned (Case #${newCaseId})`,
-				blocks: [{
-					type: "section",
-					text: {
-						type: "mrkdwn",
-						text: `:ms-mild-panic: *User Re-Banned*\nNew Case ID: #${newCaseId}\nThis user was already banned, but the ban has been updated.\nUpdated by: <@${body.user.id}>\nNew reason: ${reason}\n\n<${reviewLink}|View review message to unban>`,
+				blocks: [
+					{
+						type: "section",
+						text: {
+							type: "mrkdwn",
+							text: `:ms-mild-panic: *User Re-Banned*\nNew Case ID: #${newCaseId}\nThis user was already banned, but the ban has been updated.\nUpdated by: <@${body.user.id}>\nNew reason: ${reason}\n\n<${reviewLink}|View review message to unban>`,
+						},
 					},
-				}],
+				],
 			});
 		} else {
 			console.error("Ban error:", error);
 			await client.chat.postMessage({
 				channel: REVIEW_CHANNEL,
 				text: `:ms-crt-test-pattern: Failed to ban user - <@${body.user.id}> please check logs`,
-				blocks: [{
-					type: "section",
-					text: {
-						type: "mrkdwn",
-						text: `:ms-crt-test-pattern: *Ban Failed*\nAttempted by: <@${body.user.id}>\nError: ${error?.message || "Unknown error"}`,
+				blocks: [
+					{
+						type: "section",
+						text: {
+							type: "mrkdwn",
+							text: `:ms-crt-test-pattern: *Ban Failed*\nAttempted by: <@${body.user.id}>\nError: ${error?.message || "Unknown error"}`,
+						},
 					},
-				}],
+				],
 			});
 		}
 	}
@@ -493,7 +553,8 @@ app.view("ban_modal", async ({ ack, body, view, client }) => {
 app.action("unban_user_from_review", async ({ ack, body, client }) => {
 	await ack();
 	const action = body as any;
-	const [caseId, msgId, messageTs, channelId] = action.actions[0].value.split("|");
+	const [caseId, msgId, messageTs, channelId] =
+		action.actions[0].value.split("|");
 
 	if (!ADMINS.includes(body.user.id)) {
 		await client.chat.postEphemeral({
@@ -511,13 +572,15 @@ app.action("unban_user_from_review", async ({ ack, body, client }) => {
 			await client.chat.postMessage({
 				channel: REVIEW_CHANNEL,
 				text: `:ms-slight-smile: User unbanned (Case #${caseId})`,
-				blocks: [{
-					type: "section",
-					text: {
-						type: "mrkdwn",
-						text: `:ms-slight-smile: *User Unbanned*\nCase ID: #${caseId}\nUnbanned by: <@${body.user.id}>\nThey've been given another chance.`,
+				blocks: [
+					{
+						type: "section",
+						text: {
+							type: "mrkdwn",
+							text: `:ms-slight-smile: *User Unbanned*\nCase ID: #${caseId}\nUnbanned by: <@${body.user.id}>\nThey've been given another chance.`,
+						},
 					},
-				}],
+				],
 			});
 
 			try {
@@ -531,15 +594,19 @@ app.action("unban_user_from_review", async ({ ack, body, client }) => {
 				const msg = history.messages?.[0];
 				if (msg) {
 					const threadLink = extractThreadLink(msg.blocks);
-					const contentBlock = msg.blocks?.find((b: any) => b.type === "section" && b.text);
+					const contentBlock = msg.blocks?.find(
+						(b: any) => b.type === "section" && b.text,
+					);
 
 					const updatedBlocks: any[] = [
 						{
 							type: "context",
-							elements: [{
-								type: "mrkdwn",
-								text: `:ms-no: *DENIED* by <@${body.user.id}> · <${threadLink}|View thread>`,
-							}],
+							elements: [
+								{
+									type: "mrkdwn",
+									text: `:ms-no: *DENIED* by <@${body.user.id}> · <${threadLink}|View thread>`,
+								},
+							],
 						},
 						{ type: "divider" },
 					];
@@ -549,13 +616,15 @@ app.action("unban_user_from_review", async ({ ack, body, client }) => {
 						{ type: "divider" },
 						{
 							type: "actions",
-							elements: [{
-								type: "button",
-								text: { type: "plain_text", text: "Ban User" },
-								action_id: "ban_user",
-								value: msgId,
-							}],
-						}
+							elements: [
+								{
+									type: "button",
+									text: { type: "plain_text", text: "Ban User" },
+									action_id: "ban_user",
+									value: msgId,
+								},
+							],
+						},
 					);
 
 					await client.chat.update({
@@ -584,7 +653,6 @@ app.action("unban_user_from_review", async ({ ack, body, client }) => {
 		});
 	}
 });
-
 
 app.command("/hi-list-bans", async ({ ack, command, client }) => {
 	await ack();
