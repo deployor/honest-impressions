@@ -138,7 +138,7 @@ app.shortcut("reply_impression", async ({ ack, body, client }) => {
 		view: {
 			type: "modal",
 			callback_id: "reply_modal",
-			title: { type: "plain_text", text: "Honest Impressions Reply" },
+			title: { type: "plain_text", text: ":ms-thinking: Honest Impressions", emoji: true },
 			blocks: [
 				{
 					type: "input",
@@ -321,7 +321,7 @@ app.action("ban_user", async ({ ack, body, client }) => {
 		view: {
 			type: "modal",
 			callback_id: "ban_modal",
-			title: { type: "plain_text", text: "Ban User" },
+			title: { type: "plain_text", text: ":ms-war-hammer: Ban User", emoji: true },
 			blocks: [
 				{
 					type: "section",
