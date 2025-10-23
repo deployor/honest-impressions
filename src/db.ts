@@ -30,6 +30,12 @@ export const messages = pgTable("messages", {
 });
 
 async function generateCaseId(): Promise<string> {
+	const existingCaseIds = new Set(
+		(await db.select({ caseId: bannedUsers.caseId }).from(bannedUsers)).map(
+			(row) => row.caseId,
+		),
+	);
+
 	let digits = 4;
 	const maxAttempts = 100;
 
@@ -41,13 +47,7 @@ async function generateCaseId(): Promise<string> {
 				Math.random() * (max - min + 1) + min,
 			).toString();
 
-			const [existing] = await db
-				.select()
-				.from(bannedUsers)
-				.where(eq(bannedUsers.caseId, caseId))
-				.limit(1);
-
-			if (!existing) return caseId;
+			if (!existingCaseIds.has(caseId)) return caseId;
 		}
 		digits++;
 	}
