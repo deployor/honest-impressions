@@ -8,7 +8,9 @@ const app = new App({
 });
 
 const REVIEW_CHANNEL = process.env.REVIEW_CHANNEL_ID!;
-const ALLOWED_CHANNELS = process.env.ALLOWED_CHANNEL_IDS!.split(",").map(id => id.trim());
+const ALLOWED_CHANNELS = process.env
+	.ALLOWED_CHANNEL_IDS!.split(",")
+	.map((id) => id.trim());
 const ADMINS = process.env.ADMIN_USER_IDS!.split(",");
 const SALT = process.env.HASH_SALT!;
 
