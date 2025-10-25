@@ -48,7 +48,7 @@ View all currently banned users with `/hi-list-bans`:
 
 ## Setup
 
-Create a Slack app using [`manifest.yml`](manifest.yml), then:
+Create a Slack app using [`manifest.yml`](manifest.yml), set which channels are allowed in env then:
 
 ```bash
 bun install
