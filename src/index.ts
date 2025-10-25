@@ -8,11 +8,12 @@ const app = new App({
 });
 
 const REVIEW_CHANNEL = process.env.REVIEW_CHANNEL_ID!;
+const ALLOWED_CHANNELS = process.env.ALLOWED_CHANNEL_IDS!.split(",").map(id => id.trim());
 const ADMINS = process.env.ADMIN_USER_IDS!.split(",");
 const SALT = process.env.HASH_SALT!;
 
 const hashUser = (userId: string): string =>
-	pbkdf2Sync(userId, SALT, 100000, 32, "sha256").toString("hex");
+	pbkdf2Sync(userId, SALT, 300000, 32, "sha256").toString("hex");
 
 const buildThreadLink = async (
 	client: any,
@@ -137,6 +138,15 @@ const updateReviewMessage = (
 app.shortcut("reply_impression", async ({ ack, body, client }) => {
 	await ack();
 	const shortcut = body as any;
+
+	if (!ALLOWED_CHANNELS.includes(shortcut.channel.id)) {
+		await client.chat.postEphemeral({
+			channel: shortcut.channel.id,
+			user: shortcut.user.id,
+			text: ":ms-stop-sign: This bot is not enabled in this channel. :ms-pleading:",
+		});
+		return;
+	}
 
 	if (!shortcut.message.thread_ts) {
 		await client.chat.postEphemeral({
